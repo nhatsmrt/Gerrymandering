@@ -63,7 +63,7 @@ def first_partition(G, k):
         part.add(degrees_list[0][0])
         bfs_edges = list(nx.bfs_edges(G_copy, degrees_list[0][0]))
         G_copy.remove_node(degrees_list[0][0])
-        degrees_list = sorted(G_copy.degree, key=lambda tuple: tuple[1])
+        degrees_list.pop(0)
         if n_ver > 1:
             # print(bfs_edges)
             i = 0
@@ -74,7 +74,7 @@ def first_partition(G, k):
                     part.add(degrees_list[0][0])
                     G_copy.remove_node(degrees_list[0][0])
                     i += 1
-                    degrees_list = sorted(G_copy.degree, key = lambda tuple: tuple[1])
+                    degrees_list.pop(0)
                 if (bfs_edges[bfs_edges_iter][1] not in part):
                     part.add(bfs_edges[bfs_edges_iter][1])
                     G_copy.remove_node(bfs_edges[bfs_edges_iter][1])
@@ -110,7 +110,7 @@ model_graph_2.add_edge(16, 4)
 model_graph_2.add_edge(16, 8)
 model_graph_2.add_edge(16, 12)
 
-print(first_partition(model_graph, 2))
+print(first_partition(model_graph_2, 4))
 print(check_valid(model_graph_2, first_partition(model_graph_2, 4)))
 
 
