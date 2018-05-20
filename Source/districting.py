@@ -7,12 +7,27 @@ import copy
 def get_node(G, ind):
     return list(G.nodes)[ind]
 
-def check_valid(G, parts_list):
-    for part in parts_list:
+def check_valid(G, partition):
+    for part in partition:
         subgrph = G.subgraph(part)
         if not nx.is_connected(subgrph):
             return False
     return True
+
+def find_num_seats(G, partition):
+    n_seat = 0
+    for part in partition:
+        sum_part = 0
+        for node in part:
+            vote = G.nodes(data = True)[node]['party']
+            sum_part += vote
+        if sum_part > 0:
+            n_seat += 1
+        elif sum_part == 0:
+            n_seat += 0.5
+        # elif sum_part < 0:
+        #     n_seat -= 1
+    return n_seat
 
 
 # Generate a random valid partition
@@ -64,7 +79,7 @@ def first_partition(G, k):
 #     return part
 
 
-def pack_then_crack(G, k, n_pack = 1):
+def pack(G, k, n_pack = 1):
     G_copy = copy.deepcopy(G)
     partition = []
     nodes_B = [node for node, key in G.nodes(data = True) if key['party'] == -1]
@@ -164,6 +179,7 @@ def pack_then_crack(G, k, n_pack = 1):
 
 
 
+
 model_graph = nx.Graph()
 model_graph.add_nodes_from([0, 1, 2, 3, 4])
 model_graph.add_edges_from([(1, 2), (2, 3), (3, 4), (4, 1), (0, 1), (0, 2), (0, 3), (0, 4)])
@@ -192,10 +208,11 @@ model_graph_2.add_edge(16, 8)
 model_graph_2.add_edge(16, 12)
 nx.set_node_attributes(model_graph_2, party_support_2)
 
+print(find_num_seats(model_graph, first_partition(model_graph, 2)))
 
 print(first_partition(model_graph, k = 2))
-print(pack_then_crack(model_graph, k = 2))
-print(pack_then_crack(model_graph_2, k = 4, n_pack = 2))
+print(pack(model_graph, k = 2))
+print(pack(model_graph_2, k = 4, n_pack = 2))
 print(first_partition(model_graph_2, 4))
 print(check_valid(model_graph_2, first_partition(model_graph_2, 4)))
 print(check_valid(model_graph, first_partition(model_graph, k = 2)))
