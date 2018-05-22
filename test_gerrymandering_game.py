@@ -1,6 +1,6 @@
 import numpy as np
 import networkx as nx
-from Source import GerrymanderGame
+from Source import GerrymanderGame_v2, DQN
 
 
 model_graph_2 = nx.Graph()
@@ -30,5 +30,13 @@ model_graph_2.add_edge(16, 8)
 model_graph_2.add_edge(16, 12)
 nx.set_node_attributes(model_graph_2, attributes_dict)
 
-env = GerrymanderGame(G = model_graph_2, n_districts = 4, n_units = 17)
+env = GerrymanderGame_v2(G = model_graph_2, n_districts = 4, n_units = 17)
+state = env.sample_state()
+action = env.sample_action()
+print(action)
+print(env.reward(state, action))
+
+model = DQN(env = env, n_districts = 4, n_units = 17)
+model.train()
+
 
