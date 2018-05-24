@@ -5,3 +5,4 @@ from .gerrymandering_game import GerrymanderGame, GerrymanderGame_v2
 from .deep_q_network import DQN
 from .deeper_q_network import DeeperQN
 from .mcts import MCTS
+from .local_search import beam_search, beam_search_v2
