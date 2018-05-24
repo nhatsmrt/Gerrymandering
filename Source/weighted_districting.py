@@ -27,11 +27,14 @@ def check_valid_weighted(G, partition, delta):
             part_pop = 0
             for node in part:
                 part_pop += G.nodes(data = True)[node]['pop']
+            part_populations.append(part_pop)
     if max(part_populations) - min(part_populations) > delta:
+        print(max(part_populations) - min(part_populations))
         return False
     return True
 
-def find_num_seats(G, partition):
+#UNFINISHED
+def find_num_seats_weighted(G, partition):
     n_seat = 0
     for part in partition:
         sum_part = 0
@@ -70,16 +73,16 @@ def first_partition_weighted(G, k):
             i = 0
             bfs_edges_iter = 0
             n_bfs_node = len(bfs_edges)
-            while curr_pop < n_ver and bfs_edges_iter < n_bfs_node:
+            while curr_pop < n_pop and bfs_edges_iter < n_bfs_node:
                 while (degrees_list[0][1] == 0 and degrees_list != 0):
                     part.add(degrees_list[0][0])
                     curr_pop += find_unit_population(G, degrees_list[0][0])
                     G_copy.remove_node(degrees_list[0][0])
                     i += 1
                     degrees_list.pop(0)
-                if (bfs_edges[bfs_edges_iter][1] not in part and i < n_ver - 1):
+                if (bfs_edges[bfs_edges_iter][1] not in part and curr_pop < n_pop):
                     part.add(bfs_edges[bfs_edges_iter][1])
-                    curr_pop += find_unit_population(bfs_edges[bfs_edges_iter][1])
+                    curr_pop += find_unit_population(G, bfs_edges[bfs_edges_iter][1])
                     G_copy.remove_node(bfs_edges[bfs_edges_iter][1])
                     degrees_list = sorted(G_copy.degree, key = lambda tuple: tuple[1])
                     i += 1
@@ -100,7 +103,7 @@ def first_partition_weighted(G, k):
 
 
 # UNFINISHED:
-def pack(G, k, n_pack = 1):
+def pack_weighted(G, k, n_pack = 1):
     G_copy = copy.deepcopy(G)
     partition = []
     for node, data in G.nodes(data = True):
@@ -111,61 +114,62 @@ def pack(G, k, n_pack = 1):
 
     # Packing process
     for i in range(n_pack):
-        n_ver = len(G_copy) // (k - n_dist)
+        n_pop = find_state_population(G_copy) // (k - n_dist)
         part = set()
         degrees_list = sorted(subgraph_B.degree, key = lambda tuple: tuple[1])
         district_center = degrees_list[0][0]
         part.add(district_center)
+        curr_pop = find_unit_population(G, district_center)
         G.nodes(data=True)[district_center]['districted'] = True
-        if n_ver > 1:
-            n_ver_in_part = 1
+        if n_pop > curr_pop:
+            # n_ver_in_part = 1
             bfs_edges = list(nx.bfs_edges(subgraph_B, district_center))
             n_bfs = len(bfs_edges)
 
             bfs_iter = 0
             G_copy.remove_node(district_center)
             subgraph_B.remove_node(district_center)
-            while n_ver_in_part < n_ver and bfs_iter < n_bfs:
-                while len(degrees_list) != 0 and (degrees_list[0][1] == 0) and n_ver_in_part < n_ver:
+            while curr_pop < n_pop and bfs_iter < n_bfs:
+                while len(degrees_list) != 0 and (degrees_list[0][1] == 0) and curr_pop < n_pop:
                     if not G.nodes(data = True)[degrees_list[0][0]]['districted']:
                         part.add(degrees_list[0][0])
                         G_copy.remove_node(degrees_list[0][0])
                         subgraph_B.remove_node(degrees_list[0][0])
-                        n_ver_in_part += 1
+                        curr_pop += find_unit_population(G, degrees_list[0][0])
                         G.nodes(data=True)[degrees_list[0][0]]['districted'] = True
                     degrees_list.pop(0)
-                if n_ver_in_part < n_ver and bfs_edges[bfs_iter][1] in subgraph_B.nodes(data = False):
+                if curr_pop < n_pop and bfs_edges[bfs_iter][1] in subgraph_B.nodes(data = False):
                     part.add(bfs_edges[bfs_iter][1])
                     G_copy.remove_node(bfs_edges[bfs_iter][1])
                     subgraph_B.remove_node(bfs_edges[bfs_iter][1])
                     degrees_list = sorted(subgraph_B.degree, key=lambda tuple: tuple[1])
-                    n_ver_in_part += 1
+                    curr_pop += find_unit_population(G, bfs_edges[bfs_iter][1])
                     G.nodes(data=True)[bfs_edges[bfs_iter][1]]['districted'] = True
                 bfs_iter += 1
 
             # Add in extra nodes if necessary
-            if n_ver_in_part < n_ver:
+            if curr_pop < n_pop:
                 bfs_edges = list(nx.bfs_edges(G, district_center))
                 bfs_iter = 0
                 degrees_list = sorted(G_copy.degree, key=lambda tuple: tuple[1])
                 n_bfs = len(bfs_edges)
-                while n_ver_in_part < n_ver and bfs_iter < n_bfs:
-                    while (degrees_list[0][1] == 0) and n_ver_in_part < n_ver:
+                while curr_pop < n_pop and bfs_iter < n_bfs:
+                    while (degrees_list[0][1] == 0) and curr_pop < n_pop:
                         if not G.nodes(data = True)[degrees_list[0][0]]['districted']:
                             part.add(degrees_list[0][0])
                             G_copy.remove_node(degrees_list[0][0])
-                            n_ver_in_part += 1
+                            curr_pop += find_unit_population(G, degrees_list[0][0])
                             G.nodes(data=True)[degrees_list[0][0]]['districted'] = True
                         degrees_list.pop(0)
-                    if n_ver_in_part < n_ver and bfs_edges[bfs_iter][1] not in part:
+                    if curr_pop < n_pop and bfs_edges[bfs_iter][1] not in part:
                         part.add(bfs_edges[bfs_iter][1])
                         G_copy.remove_node(bfs_edges[bfs_iter][1])
                         degrees_list = sorted(G_copy.degree, key=lambda tuple: tuple[1])
-                        n_ver_in_part += 1
+                        curr_pop += find_unit_population(G, bfs_edges[bfs_iter][1])
                         G.nodes(data=True)[bfs_edges[bfs_iter][1]]['districted'] = True
                     bfs_iter += 1
 
-            if (n_ver_in_part < n_ver):
+            if (curr_pop < n_pop):
                 print("Can't redistrict")
                 print(part)
                 print(partition)
@@ -176,28 +180,30 @@ def pack(G, k, n_pack = 1):
     # Adding remaining districts
     for n in range(k - n_pack - 1):
         # Compute the number of vertices in the part:
-        n_ver = len(G_copy) // (k - n_pack - n)
+        n_pop = find_state_population(G_copy) // (k - n_pack - n)
 
         # Compute the list of vertex, sorted in ascending order by degree:
         degrees_list = sorted(G_copy.degree, key = lambda tuple: tuple[1])
 
         # Add the vertex with the smallest degree (a corner) and its surrounding vertices using bfs:
         part = set()
-        part.add(degrees_list[0][0])
-        bfs_edges = list(nx.bfs_edges(G_copy, degrees_list[0][0]))
-        G_copy.remove_node(degrees_list[0][0])
+        corner = degrees_list[0][0]
+        part.add(corner)
+        curr_pop = find_state_population(G, corner)
+        bfs_edges = list(nx.bfs_edges(G_copy, corner))
+        G_copy.remove_node(corner)
         degrees_list.pop(0)
-        if n_ver > 1:
+        if n_pop > curr_pop:
             i = 0
             bfs_edges_iter = 0
             n_bfs_node = len(bfs_edges)
-            while i < n_ver - 1 and bfs_edges_iter < n_bfs_node:
+            while curr_pop < n_pop and bfs_edges_iter < n_bfs_node:
                 while (len(degrees_list) != 0 and degrees_list[0][1] == 0):
                     part.add(degrees_list[0][0])
                     G_copy.remove_node(degrees_list[0][0])
                     i += 1
                     degrees_list.pop(0)
-                if (bfs_edges[bfs_edges_iter][1] not in part and i < n_ver - 1):
+                if (bfs_edges[bfs_edges_iter][1] not in part and curr_pop < n_pop):
                     part.add(bfs_edges[bfs_edges_iter][1])
                     G_copy.remove_node(bfs_edges[bfs_edges_iter][1])
                     degrees_list = sorted(G_copy.degree, key = lambda tuple: tuple[1])
