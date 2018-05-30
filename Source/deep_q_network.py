@@ -39,11 +39,10 @@ class DQN():
         self._sess = tf.Session()
         self._sess.run(tf.global_variables_initializer())
 
-        # opt = tf.train.AdamOptimizer()
-        # grad = opt.compute_gradients(self._Q_hat_target, var_list = [self._W_s, self._W_a, self._b])
         grad_W_s, grad_W_a, grad_b = tf.gradients(ys = self._Q_hat, xs = [self._W_s, self._W_a, self._b])
 
         for epoch in range(n_epochs):
+            print("Epoch " + str(epoch))
             # Sample action and state
             state = self._env.sample_state()
             (position, displacement) = self._env.sample_action()
@@ -55,6 +54,11 @@ class DQN():
             # Uniformly sample the replay buffer
             ind = random.randrange(0, len(self._replay_buffer))
             state, action, new_state, reward = self._replay_buffer[ind]
+
+            # Pop some old sample:
+            if len(self._replay_buffer) > 200:
+                self._replay_buffer.pop(0)
+
 
             # Compute the target:
             y = reward + discount * self.find_best_Q_target(new_state)
@@ -96,15 +100,33 @@ class DQN():
 
         return np.max(q_list)
 
+    # Using double Q:
+    def find_best_Q_target_v2(self, state):
+        q_list = []
+        for ind in range(self._n_units * (self._n_districts - 1)):
+            action = np.zeros(self._n_units * (self._n_districts - 1))
+            action[ind] = 1
+            q = self._sess.run(self._Q_hat, feed_dict = {self._state: [state], self._action: [action]})
+            q_list.append(q)
+
+        act_ind = np.argmax(q_list)
+        action = np.zeros(self._n_units * (self._n_districts - 1))
+        action[act_ind] = 1
+        return self._sess.run(self._Q_hat_target, feed_dict = {self._state: [state], self._action: [action]})
+
+
     def act(self, state):
         q_list = []
         for ind in range(self._n_units * (self._n_districts - 1)):
             action = np.zeros(self._n_units * (self._n_districts - 1))
             action[ind] = 1
-            q = self._sess.run(self._Q_hat, feed_dict = {self._state: state, self._action: action})
+            q = self._sess.run(self._Q_hat, feed_dict = {self._state: [state], self._action: [action]})
             q_list.append(q)
 
-        return np.argmax(q_list)
+        act_ind = np.argmax(q_list) + 1
+        displacement = act_ind % (self._n_districts - 1)
+        position = act_ind // (self._n_districts - 1)
+        return (position, displacement)
 
 
 

@@ -60,6 +60,10 @@ class DeeperQN():
             reward = self._env.reward(state, (position, displacement))
             self._replay_buffer.append((state, action, new_state, reward))
 
+            # Pop some old sample:
+            if len(self._replay_buffer) > 200:
+                self._replay_buffer.pop(0)
+
             # Uniformly sample the replay buffer
             ind = random.randrange(0, len(self._replay_buffer))
             state, action, new_state, reward = self._replay_buffer[ind]
@@ -70,11 +74,11 @@ class DeeperQN():
 
 
             # Minimize the Bellman error:
-            assign_W_s_1 = self._W_s_1.assign(lr * grad_W_s_1 * (self._Q_hat - self._y))
-            assign_W_a_1 = self._W_a_1.assign(lr * grad_W_a_1 * (self._Q_hat - self._y))
-            assign_b_1 = self._b_1.assign(tf.reshape(lr * grad_b_1 * (self._Q_hat - self._y), [10]))
-            assign_W_2 = self._W_2.assign(lr * grad_W_2 * (self._Q_hat - self._y))
-            assign_b_2 = self._b_2.assign(tf.reshape(lr * grad_b_2 * (self._Q_hat - self._y), [1]))
+            assign_W_s_1 = self._W_s_1.assign(self._W_s_1 - lr * grad_W_s_1 * (self._Q_hat - self._y))
+            assign_W_a_1 = self._W_a_1.assign(self._W_a_1 - lr * grad_W_a_1 * (self._Q_hat - self._y))
+            assign_b_1 = self._b_1.assign(self._b_1 - tf.reshape(lr * grad_b_1 * (self._Q_hat - self._y), [10]))
+            assign_W_2 = self._W_2.assign(self._W_2 - lr * grad_W_2 * (self._Q_hat - self._y))
+            assign_b_2 = self._b_2.assign(self._b_2 - tf.reshape(lr * grad_b_2 * (self._Q_hat - self._y), [1]))
 
             assigns = [assign_W_s_1, assign_W_a_1, assign_b_1, assign_W_2, assign_b_2]
 
@@ -94,6 +98,7 @@ class DeeperQN():
             assigns_target = [assign_W_s_1_target, assign_W_a_1_target, assign_b_1_target, assign_W_2_target, assign_b_2_target]
 
             self._sess.run(assigns_target)
+            # print(self._sess.run(self._W_s_1))
 
 
         print("Finish Training")
@@ -137,8 +142,8 @@ class DeeperQN():
             q = self._sess.run(self._Q_hat, feed_dict = {self._state: [state], self._action: [action]})
             q_list.append(q)
 
-        act_ind = np.argmax(q_list) + 1
-        displacement = act_ind % (self._n_districts - 1)
+        act_ind = np.argmax(q_list)
+        displacement = act_ind % (self._n_districts - 1) + 1
         position = act_ind // (self._n_districts - 1)
         return (position, displacement)
 

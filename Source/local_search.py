@@ -17,6 +17,7 @@ def beam_search(env, initial_partition, search_depth = 2, n_keep = 5):
                     n_seats = env.find_num_seats(new_partition)
                     list_all.append((new_partition, n_seats))
 
+
         keep_list =  sorted(list_all, key = lambda tuple: tuple[1])[:-n_keep]
         list_all = sorted(list_all, key = lambda tuple: tuple[1])[:-n_keep]
 
@@ -38,6 +39,7 @@ def beam_search_v2(env, initial_partition, search_depth = 10, n_keep = 5):
     state_list.append(str(env.partition_to_state(initial_partition)))
 
     for depth in range(search_depth):
+        curr_n_state = len(state_list)
 
         for partition, seat in keep_list:
             for position in range(env._n_units):
@@ -55,6 +57,11 @@ def beam_search_v2(env, initial_partition, search_depth = 10, n_keep = 5):
         keep_list =  list_all[ind, :]
         list_all = list_all[ind, :]
         print("Depth " + str(depth))
+        if depth % 10 == 0:
+            print(keep_list[-1])
         # print(keep_list)
+        if len(state_list) == curr_n_state:
+            print("Training completed at depth: " + str(depth))
+            return keep_list[np.argsort(keep_list[:, 1])[-1], :]
 
     return keep_list[np.argsort(keep_list[:, 1])[-1], :]
